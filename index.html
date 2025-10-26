@@ -12,11 +12,13 @@
         }
         body {
             font-family: Arial, sans-serif;
-            overflow: hidden;
             background: linear-gradient(to bottom, #c084fc, #ec4899);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         #header {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             padding: 1rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
@@ -51,83 +53,154 @@
         .moves { color: #ec4899; }
         .time { color: #10b981; }
         .time.warning { color: #dc2626; }
-        #gameCanvas {
-            width: 100%;
-            height: calc(100vh - 80px);
-            display: block;
-            cursor: pointer;
+        
+        #game-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
         }
+        
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .card {
+            aspect-ratio: 2/3;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card.matched {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+        }
+        
+        .card-back {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 4px solid white;
+        }
+        
+        .card-back::after {
+            content: '⭐';
+            font-size: 3rem;
+        }
+        
+        .card-front {
+            background: white;
+            transform: rotateY(180deg);
+        }
+        
         .overlay {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
             text-align: center;
             z-index: 1000;
+            min-width: 300px;
         }
+        
         .overlay h2 {
             font-size: 2rem;
             color: #9333ea;
             margin-bottom: 1rem;
         }
+        
         .overlay p {
             color: #4b5563;
             margin-bottom: 1.5rem;
+            font-size: 1.1rem;
         }
+        
         .overlay button {
             background: #9333ea;
             color: white;
             font-size: 1.25rem;
             font-weight: bold;
-            padding: 0.75rem 2rem;
+            padding: 0.875rem 2.5rem;
             border: none;
             border-radius: 2rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(147, 51, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
         }
+        
         .overlay button:hover {
             background: #7e22ce;
             transform: scale(1.05);
         }
+        
         .message {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
-            padding: 1.5rem 2.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            font-size: 1.5rem;
+            padding: 1.5rem 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            font-size: 2rem;
             font-weight: bold;
             color: #9333ea;
             z-index: 999;
             animation: bounce 0.5s ease;
         }
+        
         @keyframes bounce {
             0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.1); }
+            50% { transform: translate(-50%, -50%) scale(1.15); }
         }
+        
         .hidden { display: none; }
-        #loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 1.5rem;
-            z-index: 2000;
+        
+        @media (max-width: 768px) {
+            #game-board {
+                gap: 0.5rem;
+                max-width: 90vw;
+            }
+            .card-face {
+                font-size: 2.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="loading">Loading game...</div>
-    
     <div id="header">
         <div class="header-content">
             <div class="title">🐾 Animal Match</div>
@@ -148,7 +221,9 @@
         </div>
     </div>
 
-    <div id="gameCanvas"></div>
+    <div id="game-container">
+        <div id="game-board"></div>
+    </div>
 
     <div id="startOverlay" class="overlay">
         <h2>🐾 Animal Match Game</h2>
@@ -165,229 +240,106 @@
 
     <div id="message" class="message hidden"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Wait for Three.js to load
-        function waitForThree() {
-            return new Promise((resolve) => {
-                if (typeof THREE !== 'undefined') {
-                    resolve();
-                } else {
-                    setTimeout(() => waitForThree().then(resolve), 100);
-                }
-            });
-        }
+        const animals = [
+            { emoji: '🐶', color: '#ff6b6b' },
+            { emoji: '🐱', color: '#4ecdc4' },
+            { emoji: '🐭', color: '#ffe66d' },
+            { emoji: '🐹', color: '#a8e6cf' },
+            { emoji: '🐰', color: '#ff8b94' },
+            { emoji: '🦊', color: '#ffa07a' },
+            { emoji: '🐻', color: '#98d8c8' },
+            { emoji: '🐼', color: '#c7ceea' }
+        ];
 
-        waitForThree().then(() => {
-            document.getElementById('loading').style.display = 'none';
-            initGame();
-        });
-
-        let scene, camera, renderer;
-        let cards = [];
-        let flippedCards = [];
-        let matchedPairs = 0;
-        let canFlip = true;
-        let raycaster;
-        let mouse;
         let score = 0;
         let moves = 0;
         let timeLeft = 90;
         let gameStarted = false;
         let gameOver = false;
         let timerInterval = null;
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let canFlip = true;
 
-        const animals = [
-            { emoji: '🐶', color: 0xff6b6b },
-            { emoji: '🐱', color: 0x4ecdc4 },
-            { emoji: '🐭', color: 0xffe66d },
-            { emoji: '🐹', color: 0xa8e6cf },
-            { emoji: '🐰', color: 0xff8b94 },
-            { emoji: '🦊', color: 0xffa07a },
-            { emoji: '🐻', color: 0x98d8c8 },
-            { emoji: '🐼', color: 0xc7ceea }
-        ];
-
-        function initGame() {
-            raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
+        function createCard(animal, index) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.animal = animal.emoji;
+            card.dataset.index = index;
             
-            const container = document.getElementById('gameCanvas');
+            const cardBack = document.createElement('div');
+            cardBack.className = 'card-face card-back';
             
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb);
+            const cardFront = document.createElement('div');
+            cardFront.className = 'card-face card-front';
+            cardFront.style.background = animal.color;
+            cardFront.textContent = animal.emoji;
             
-            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 12, 8);
-            camera.lookAt(0, 0, 0);
+            card.appendChild(cardBack);
+            card.appendChild(cardFront);
             
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.shadowMap.enabled = true;
-            container.appendChild(renderer.domElement);
+            card.addEventListener('click', () => handleCardClick(card));
             
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(5, 10, 5);
-            dirLight.castShadow = true;
-            scene.add(dirLight);
-            
-            const groundGeometry = new THREE.PlaneGeometry(30, 30);
-            const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x90ee90, side: THREE.DoubleSide });
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            ground.rotation.x = Math.PI / 2;
-            ground.position.y = -1;
-            ground.receiveShadow = true;
-            scene.add(ground);
-            
-            container.addEventListener('click', handleClick);
-            window.addEventListener('resize', handleResize);
-            
-            animate();
-        }
-
-        function createCardBack() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 356;
-            const ctx = canvas.getContext('2d');
-            
-            const gradient = ctx.createLinearGradient(0, 0, 256, 356);
-            gradient.addColorStop(0, '#667eea');
-            gradient.addColorStop(1, '#764ba2');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 256, 356);
-            
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 8;
-            ctx.strokeRect(12, 12, 232, 332);
-            
-            ctx.strokeStyle = '#ffd700';
-            ctx.lineWidth = 3;
-            
-            ctx.beginPath();
-            ctx.moveTo(128, 50);
-            ctx.lineTo(180, 178);
-            ctx.lineTo(128, 306);
-            ctx.lineTo(76, 178);
-            ctx.closePath();
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(128, 90);
-            ctx.lineTo(155, 178);
-            ctx.lineTo(128, 266);
-            ctx.lineTo(101, 178);
-            ctx.closePath();
-            ctx.stroke();
-            
-            const corners = [[40, 40], [216, 40], [40, 316], [216, 316]];
-            corners.forEach(([x, y]) => {
-                ctx.fillStyle = '#ffd700';
-                ctx.beginPath();
-                ctx.arc(x, y, 8, 0, Math.PI * 2);
-                ctx.fill();
-            });
-            
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 60px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('⭐', 128, 178);
-            
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        function createCardFront(emoji) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, 256, 256);
-            ctx.font = 'bold 180px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(emoji, 128, 128);
-            
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        function createCard(x, z, animalData, index) {
-            const group = new THREE.Group();
-            
-            const cardGeometry = new THREE.BoxGeometry(2, 0.1, 2.8);
-            const cardMaterial = new THREE.MeshPhongMaterial({ color: animalData.color, shininess: 100 });
-            const card = new THREE.Mesh(cardGeometry, cardMaterial);
-            card.castShadow = true;
-            card.receiveShadow = true;
-            group.add(card);
-            
-            const planeGeometry = new THREE.PlaneGeometry(1.8, 2.6);
-            
-            const backTexture = createCardBack();
-            const backMaterial = new THREE.MeshPhongMaterial({ map: backTexture, side: THREE.DoubleSide });
-            const back = new THREE.Mesh(planeGeometry, backMaterial);
-            back.position.y = 0.06;
-            back.rotation.x = -Math.PI / 2;
-            group.add(back);
-            
-            const frontTexture = createCardFront(animalData.emoji);
-            const frontMaterial = new THREE.MeshPhongMaterial({ map: frontTexture, side: THREE.DoubleSide });
-            const front = new THREE.Mesh(planeGeometry, frontMaterial);
-            front.position.y = -0.06;
-            front.rotation.x = Math.PI / 2;
-            front.visible = false;
-            group.add(front);
-            
-            group.position.set(x, 0, z);
-            group.userData = {
-                animal: animalData.emoji,
-                color: animalData.color,
-                index,
-                flipped: false,
-                matched: false,
-                originalY: 0,
-                targetRotation: 0,
-                currentRotation: 0,
-                back,
-                front
-            };
-            
-            return group;
+            return card;
         }
 
         function setupGame() {
-            cards.forEach(card => scene.remove(card));
-            cards = [];
-            matchedPairs = 0;
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
             flippedCards = [];
+            matchedPairs = 0;
+            canFlip = true;
             
             const pairs = [...animals, ...animals].sort(() => Math.random() - 0.5);
             
-            let index = 0;
-            for (let row = 0; row < 4; row++) {
-                for (let col = 0; col < 4; col++) {
-                    const x = (col - 1.5) * 2.5;
-                    const z = (row - 1.5) * 3.2;
-                    const card = createCard(x, z, pairs[index], index);
-                    scene.add(card);
-                    cards.push(card);
-                    index++;
-                }
+            pairs.forEach((animal, index) => {
+                const card = createCard(animal, index);
+                gameBoard.appendChild(card);
+            });
+        }
+
+        function handleCardClick(card) {
+            if (!gameStarted || gameOver || !canFlip) return;
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+            if (flippedCards.length >= 2) return;
+            
+            card.classList.add('flipped');
+            flippedCards.push(card);
+            
+            if (flippedCards.length === 2) {
+                checkMatch();
             }
         }
 
-        function flipCard(card, show) {
-            if (card.userData.matched) return;
+        function checkMatch() {
+            canFlip = false;
+            moves++;
+            updateUI();
             
-            card.userData.flipped = show;
-            card.userData.targetRotation = show ? Math.PI : 0;
-            card.userData.front.visible = show;
-            card.userData.back.visible = !show;
+            const [card1, card2] = flippedCards;
+            const match = card1.dataset.animal === card2.dataset.animal;
+            
+            setTimeout(() => {
+                if (match) {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedPairs++;
+                    score += 100;
+                    updateUI();
+                    showMessage('Match! 🎉');
+                    
+                    if (matchedPairs === 8) {
+                        endGame(true);
+                    }
+                } else {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                }
+                
+                flippedCards = [];
+                canFlip = true;
+            }, match ? 500 : 1000);
         }
 
         function showMessage(text) {
@@ -405,106 +357,15 @@
             timeEl.className = 'stat-value time' + (timeLeft < 15 ? ' warning' : '');
         }
 
-        function checkMatch() {
-            if (flippedCards.length !== 2) return;
-            
-            canFlip = false;
-            const [card1, card2] = flippedCards;
-            
-            moves++;
-            updateUI();
-            
-            if (card1.userData.animal === card2.userData.animal) {
-                setTimeout(() => {
-                    card1.userData.matched = true;
-                    card2.userData.matched = true;
-                    card1.userData.targetY = -0.5;
-                    card2.userData.targetY = -0.5;
-                    
-                    matchedPairs++;
-                    score += 100;
-                    updateUI();
-                    showMessage('Match! 🎉');
-                    
-                    if (matchedPairs === 8) {
-                        gameOver = true;
-                        clearInterval(timerInterval);
-                        document.getElementById('finalStats').innerHTML = 
-                            `Final Score: ${score}<br>Moves: ${moves}`;
-                        document.getElementById('gameOverOverlay').classList.remove('hidden');
-                    }
-                    
-                    flippedCards = [];
-                    canFlip = true;
-                }, 500);
-            } else {
-                setTimeout(() => {
-                    flipCard(card1, false);
-                    flipCard(card2, false);
-                    flippedCards = [];
-                    canFlip = true;
-                }, 1000);
+        function endGame(won) {
+            gameOver = true;
+            clearInterval(timerInterval);
+            document.getElementById('finalStats').innerHTML = 
+                `Final Score: ${score}<br>Moves: ${moves}`;
+            document.getElementById('gameOverOverlay').classList.remove('hidden');
+            if (!won) {
+                showMessage('Time Up! 😅');
             }
-        }
-
-        function handleClick(event) {
-            if (!gameStarted || gameOver || !canFlip) return;
-            
-            const rect = event.target.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-            
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(cards, true);
-            
-            if (intersects.length > 0) {
-                const card = intersects[0].object.parent;
-                if (!card.userData.flipped && !card.userData.matched) {
-                    flipCard(card, true);
-                    flippedCards.push(card);
-                    
-                    if (flippedCards.length === 2) {
-                        checkMatch();
-                    }
-                }
-            }
-        }
-
-        function animate() {
-            cards.forEach(card => {
-                const rotDiff = card.userData.targetRotation - card.userData.currentRotation;
-                if (Math.abs(rotDiff) > 0.01) {
-                    card.userData.currentRotation += rotDiff * 0.15;
-                    card.rotation.y = card.userData.currentRotation;
-                }
-                
-                if (card.userData.matched && card.userData.targetY !== undefined) {
-                    const yDiff = card.userData.targetY - card.position.y;
-                    if (Math.abs(yDiff) > 0.01) {
-                        card.position.y += yDiff * 0.1;
-                    }
-                }
-                
-                if (!card.userData.matched) {
-                    card.userData.originalY = card.userData.originalY || 0;
-                    const targetY = card.userData.flipped ? 0.3 : 0;
-                    const yDiff = targetY - card.userData.originalY;
-                    if (Math.abs(yDiff) > 0.01) {
-                        card.userData.originalY += yDiff * 0.1;
-                        card.position.y = card.userData.originalY;
-                    }
-                }
-            });
-            
-            renderer.render(scene, camera);
-            requestAnimationFrame(animate);
-        }
-
-        function handleResize() {
-            const container = document.getElementById('gameCanvas');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
         }
 
         function startGame() {
@@ -526,12 +387,7 @@
                 updateUI();
                 
                 if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    gameOver = true;
-                    document.getElementById('finalStats').innerHTML = 
-                        `Final Score: ${score}<br>Moves: ${moves}`;
-                    document.getElementById('gameOverOverlay').classList.remove('hidden');
-                    showMessage('Time Up! 😅');
+                    endGame(false);
                 }
             }, 1000);
         }
