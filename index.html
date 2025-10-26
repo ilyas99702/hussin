@@ -5,7 +5,7 @@ export default function AnimalPairGame() {
   const mountRef = useRef(null);
   const [score, setScore] = useState(0);
   const [moves, setMoves] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(90);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState('');
@@ -35,10 +35,77 @@ export default function AnimalPairGame() {
     { emoji: '🐼', color: 0xc7ceea }
   ];
   
+  const createCardBack = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 356;
+    const ctx = canvas.getContext('2d');
+    
+    const gradient = ctx.createLinearGradient(0, 0, 256, 356);
+    gradient.addColorStop(0, '#667eea');
+    gradient.addColorStop(1, '#764ba2');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 256, 356);
+    
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(12, 12, 232, 332);
+    
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 3;
+    
+    ctx.beginPath();
+    ctx.moveTo(128, 50);
+    ctx.lineTo(180, 178);
+    ctx.lineTo(128, 306);
+    ctx.lineTo(76, 178);
+    ctx.closePath();
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(128, 90);
+    ctx.lineTo(155, 178);
+    ctx.lineTo(128, 266);
+    ctx.lineTo(101, 178);
+    ctx.closePath();
+    ctx.stroke();
+    
+    const corners = [[40, 40], [216, 40], [40, 316], [216, 316]];
+    corners.forEach(([x, y]) => {
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 60px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⭐', 128, 178);
+    
+    return new THREE.CanvasTexture(canvas);
+  };
+
+  const createCardFront = (emoji) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 256, 256);
+    ctx.font = 'bold 180px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, 128, 128);
+    
+    return new THREE.CanvasTexture(canvas);
+  };
+  
   const createCard = (x, z, animalData, index) => {
     const group = new THREE.Group();
     
-    // Card base with unique color
     const cardGeometry = new THREE.BoxGeometry(2, 0.1, 2.8);
     const cardMaterial = new THREE.MeshPhongMaterial({ 
       color: animalData.color,
@@ -49,91 +116,24 @@ export default function AnimalPairGame() {
     card.receiveShadow = true;
     group.add(card);
     
-    const backGeometry = new THREE.PlaneGeometry(1.8, 2.6);
+    const planeGeometry = new THREE.PlaneGeometry(1.8, 2.6);
     
-    // Card back pattern with decorative design
-    const backCanvas = document.createElement('canvas');
-    backCanvas.width = 256;
-    backCanvas.height = 356;
-    const backCtx = backCanvas.getContext('2d');
-    
-    // Gradient background
-    const gradient = backCtx.createLinearGradient(0, 0, 256, 356);
-    gradient.addColorStop(0, '#667eea');
-    gradient.addColorStop(1, '#764ba2');
-    backCtx.fillStyle = gradient;
-    backCtx.fillRect(0, 0, 256, 356);
-    
-    // Border
-    backCtx.strokeStyle = '#ffffff';
-    backCtx.lineWidth = 8;
-    backCtx.strokeRect(12, 12, 232, 332);
-    
-    // Inner decorative pattern
-    backCtx.strokeStyle = '#ffd700';
-    backCtx.lineWidth = 3;
-    
-    // Diamond pattern
-    backCtx.beginPath();
-    backCtx.moveTo(128, 50);
-    backCtx.lineTo(180, 178);
-    backCtx.lineTo(128, 306);
-    backCtx.lineTo(76, 178);
-    backCtx.closePath();
-    backCtx.stroke();
-    
-    backCtx.beginPath();
-    backCtx.moveTo(128, 90);
-    backCtx.lineTo(155, 178);
-    backCtx.lineTo(128, 266);
-    backCtx.lineTo(101, 178);
-    backCtx.closePath();
-    backCtx.stroke();
-    
-    // Corner decorations
-    const corners = [[40, 40], [216, 40], [40, 316], [216, 316]];
-    corners.forEach(([x, y]) => {
-      backCtx.fillStyle = '#ffd700';
-      backCtx.beginPath();
-      backCtx.arc(x, y, 8, 0, Math.PI * 2);
-      backCtx.fill();
-    });
-    
-    // Center star
-    backCtx.fillStyle = '#ffffff';
-    backCtx.font = 'bold 60px Arial';
-    backCtx.textAlign = 'center';
-    backCtx.textBaseline = 'middle';
-    backCtx.fillText('⭐', 128, 178);
-    
-    const backTexture = new THREE.CanvasTexture(backCanvas);
+    const backTexture = createCardBack();
     const backMaterial = new THREE.MeshPhongMaterial({ 
       map: backTexture,
       side: THREE.DoubleSide 
     });
-    const back = new THREE.Mesh(backGeometry, backMaterial);
+    const back = new THREE.Mesh(planeGeometry, backMaterial);
     back.position.y = 0.06;
     back.rotation.x = -Math.PI / 2;
     group.add(back);
     
-    // Animal emoji (front)
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, 256, 256);
-    ctx.font = 'bold 180px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(animalData.emoji, 128, 128);
-    
-    const texture = new THREE.CanvasTexture(canvas);
+    const frontTexture = createCardFront(animalData.emoji);
     const frontMaterial = new THREE.MeshPhongMaterial({ 
-      map: texture,
+      map: frontTexture,
       side: THREE.DoubleSide 
     });
-    const front = new THREE.Mesh(backGeometry, frontMaterial);
+    const front = new THREE.Mesh(planeGeometry, frontMaterial);
     front.position.y = -0.06;
     front.rotation.x = Math.PI / 2;
     front.visible = false;
@@ -157,19 +157,15 @@ export default function AnimalPairGame() {
   };
 
   const setupGame = () => {
-    const { scene, camera } = gameRef.current;
+    const { scene } = gameRef.current;
     
-    // Clear existing cards
     gameRef.current.cards.forEach(card => scene.remove(card));
     gameRef.current.cards = [];
     gameRef.current.matchedPairs = 0;
     gameRef.current.flippedCards = [];
     
-    // Create card pairs
-    const pairs = [...animals, ...animals]
-      .sort(() => Math.random() - 0.5);
+    const pairs = [...animals, ...animals].sort(() => Math.random() - 0.5);
     
-    // 4x4 grid
     let index = 0;
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 4; col++) {
@@ -181,9 +177,6 @@ export default function AnimalPairGame() {
         index++;
       }
     }
-    
-    camera.position.set(0, 12, 8);
-    camera.lookAt(0, 0, 0);
   };
 
   const flipCard = (card, show) => {
@@ -205,7 +198,6 @@ export default function AnimalPairGame() {
     setMoves(m => m + 1);
     
     if (card1.userData.animal === card2.userData.animal) {
-      // Match found!
       setTimeout(() => {
         card1.userData.matched = true;
         card2.userData.matched = true;
@@ -227,7 +219,6 @@ export default function AnimalPairGame() {
         gameRef.current.canFlip = true;
       }, 500);
     } else {
-      // No match
       setTimeout(() => {
         flipCard(card1, false);
         flipCard(card2, false);
@@ -263,16 +254,13 @@ export default function AnimalPairGame() {
   const animate = () => {
     const { scene, camera, renderer, cards } = gameRef.current;
     
-    // Animate card flips and movements
     cards.forEach(card => {
-      // Rotation animation
       const rotDiff = card.userData.targetRotation - card.userData.currentRotation;
       if (Math.abs(rotDiff) > 0.01) {
         card.userData.currentRotation += rotDiff * 0.15;
         card.rotation.y = card.userData.currentRotation;
       }
       
-      // Matched cards sink down
       if (card.userData.matched && card.userData.targetY !== undefined) {
         const yDiff = card.userData.targetY - card.position.y;
         if (Math.abs(yDiff) > 0.01) {
@@ -280,7 +268,6 @@ export default function AnimalPairGame() {
         }
       }
       
-      // Hover effect
       if (!card.userData.matched) {
         card.userData.originalY = card.userData.originalY || 0;
         const targetY = card.userData.flipped ? 0.3 : 0;
@@ -301,11 +288,10 @@ export default function AnimalPairGame() {
     setGameOver(false);
     setScore(0);
     setMoves(0);
-    setTimeLeft(60);
+    setTimeLeft(90);
     setMessage('');
     setupGame();
     
-    // Start timer
     gameRef.current.timerInterval = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 1) {
@@ -322,25 +308,23 @@ export default function AnimalPairGame() {
   useEffect(() => {
     if (!mountRef.current) return;
 
-    // Scene
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb);
     
-    // Camera
     const camera = new THREE.PerspectiveCamera(
       60,
       mountRef.current.clientWidth / mountRef.current.clientHeight,
       0.1,
       1000
     );
+    camera.position.set(0, 12, 8);
+    camera.lookAt(0, 0, 0);
     
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
     renderer.shadowMap.enabled = true;
     mountRef.current.appendChild(renderer.domElement);
     
-    // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
     
@@ -349,7 +333,6 @@ export default function AnimalPairGame() {
     dirLight.castShadow = true;
     scene.add(dirLight);
     
-    // Ground
     const groundGeometry = new THREE.PlaneGeometry(30, 30);
     const groundMaterial = new THREE.MeshPhongMaterial({ 
       color: 0x90ee90,
@@ -367,7 +350,6 @@ export default function AnimalPairGame() {
     
     animate();
     
-    // Handle resize
     const handleResize = () => {
       if (!mountRef.current) return;
       camera.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight;
@@ -392,23 +374,22 @@ export default function AnimalPairGame() {
   }, []);
 
   return (
-    <div className="w-full h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex flex-col">
-      {/* Header */}
+    <div className="w-full h-screen bg-gradient-to-b from-purple-400 to-pink-500 flex flex-col">
       <div className="bg-white bg-opacity-90 shadow-lg p-4">
         <div className="flex justify-between items-center max-w-4xl mx-auto">
-          <div className="text-xl font-bold text-blue-600">🐾 Animal Match</div>
+          <div className="text-2xl font-bold text-purple-600">🐾 Animal Match</div>
           <div className="flex gap-6 text-sm font-semibold">
             <div className="flex flex-col items-center">
               <span className="text-gray-600">Score</span>
-              <span className="text-2xl text-blue-600">{score}</span>
+              <span className="text-2xl text-purple-600">{score}</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="text-gray-600">Moves</span>
-              <span className="text-2xl text-purple-600">{moves}</span>
+              <span className="text-2xl text-pink-600">{moves}</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="text-gray-600">Time</span>
-              <span className={`text-2xl ${timeLeft < 10 ? 'text-red-600' : 'text-green-600'}`}>
+              <span className={`text-2xl ${timeLeft < 15 ? 'text-red-600' : 'text-green-600'}`}>
                 {timeLeft}s
               </span>
             </div>
@@ -416,27 +397,24 @@ export default function AnimalPairGame() {
         </div>
       </div>
 
-      {/* Game Canvas */}
       <div 
         ref={mountRef} 
         className="flex-1 relative cursor-pointer"
         onClick={handleClick}
       />
 
-      {/* Message Overlay */}
       {message && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                      bg-white px-8 py-4 rounded-lg shadow-2xl text-2xl font-bold text-blue-600
+                      bg-white px-8 py-4 rounded-lg shadow-2xl text-2xl font-bold text-purple-600
                       animate-bounce">
           {message}
         </div>
       )}
 
-      {/* Start/Restart Button */}
       {(!gameStarted || gameOver) && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
                       bg-white p-8 rounded-2xl shadow-2xl text-center">
-          <h2 className="text-3xl font-bold text-blue-600 mb-4">
+          <h2 className="text-3xl font-bold text-purple-600 mb-4">
             {gameOver ? '🎮 Game Over!' : '🐾 Animal Match Game'}
           </h2>
           {gameOver && (
@@ -450,7 +428,7 @@ export default function AnimalPairGame() {
           </p>
           <button
             onClick={startGame}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 
                      rounded-full text-xl transition-all transform hover:scale-105 shadow-lg"
           >
             {gameOver ? '🔄 Play Again' : '▶️ Start Game'}
