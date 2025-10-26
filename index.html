@@ -436,7 +436,7 @@ const animals = [
 
 let score = 0;
 let moves = 0;
-let timeLeft = 90;
+let timeLeft = 30;
 let gameStarted = false;
 let gameOver = false;
 let timerInterval = null;
@@ -561,7 +561,7 @@ function startGame() {
   gameOver = false;
   score = 0;
   moves = 0;
-  timeLeft = 90;
+  timeLeft = 30;
   updateUI();
   
   setupGame();
@@ -598,4 +598,3 @@ window.addEventListener('unhandledrejection', e => console.error('Unhandled prom
 </script>
 </body>
 </html>
-
