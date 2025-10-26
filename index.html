@@ -2,71 +2,81 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animal Match Game</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>🐾 Animal Match — Memory Game</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom, #c084fc, #ec4899);
-            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0e13 0%, #1a1f2e 100%);
+            color: #e7ecf0;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            min-height: 100dvh;
+            padding: 0;
         }
-        #header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 1rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
+        .wrap { width: min(900px, 96vw); position: relative; }
+        
+        .game-header {
+            width: 100%;
+            background: #12171b;
+            border-bottom: 2px solid #1f2a32;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
-        .title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #9333ea;
+        
+        .game-header h1 {
+            font-size: 20px;
+            margin: 0;
         }
-        .stats {
+        
+        .header-stats {
             display: flex;
-            gap: 2rem;
+            gap: 30px;
         }
-        .stat {
-            text-align: center;
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .stat-label {
-            font-size: 0.875rem;
-            color: #4b5563;
+        
+        .stat-item label {
+            font-size: 12px;
+            color: #9aa7b1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
+        
+        .stat-item .score-display {
+            font-size: 20px;
+            font-weight: 700;
+            color: #a855f7;
         }
-        .score { color: #9333ea; }
-        .moves { color: #ec4899; }
-        .time { color: #10b981; }
-        .time.warning { color: #dc2626; }
+        
+        .time-display { color: #4ade80; }
+        .time-display.warning { color: #fbbf24; }
         
         #game-container {
-            flex: 1;
+            padding: 40px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 2rem;
-            position: relative;
+            min-height: calc(100vh - 60px);
         }
         
         #game-board {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
+            gap: 15px;
             max-width: 600px;
             width: 100%;
         }
@@ -79,11 +89,13 @@
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 2px solid #7c3aed;
         }
         
         .card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(168,85,247,0.4);
         }
         
         .card.flipped {
@@ -91,8 +103,9 @@
         }
         
         .card.matched {
-            opacity: 0.6;
+            opacity: 0.5;
             pointer-events: none;
+            border-color: #4ade80;
         }
         
         .card-face {
@@ -100,7 +113,7 @@
             width: 100%;
             height: 100%;
             backface-visibility: hidden;
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -109,61 +122,75 @@
         
         .card-back {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: 4px solid white;
+            border: 3px solid rgba(255,255,255,0.2);
         }
         
         .card-back::after {
             content: '⭐';
             font-size: 3rem;
+            filter: drop-shadow(0 0 10px rgba(255,215,0,0.5));
         }
         
         .card-front {
-            background: white;
+            background: #12171b;
+            border: 3px solid;
             transform: rotateY(180deg);
         }
         
         .overlay {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 2.5rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-            text-align: center;
-            z-index: 1000;
-            min-width: 300px;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            background: rgba(8,11,14,.85);
+            backdrop-filter: blur(4px);
+            padding: 16px;
+            z-index: 100;
         }
         
-        .overlay h2 {
-            font-size: 2rem;
-            color: #9333ea;
-            margin-bottom: 1rem;
+        .card-dialog {
+            background: #12171b;
+            border: 1px solid #1f2a32;
+            border-radius: 14px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.35);
+            max-width: 500px;
+            width: 90%;
         }
         
-        .overlay p {
-            color: #4b5563;
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
+        .card-dialog h1 {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 10px rgba(168,85,247,0.5);
         }
         
-        .overlay button {
-            background: #9333ea;
-            color: white;
-            font-size: 1.25rem;
-            font-weight: bold;
-            padding: 0.875rem 2.5rem;
+        .muted {
+            color: #9aa7b1;
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+        
+        .btn-primary {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: #fff;
             border: none;
-            border-radius: 2rem;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 16px;
             cursor: pointer;
+            box-shadow: 0 6px 20px rgba(168,85,247,0.4);
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: 100%;
         }
         
-        .overlay button:hover {
-            background: #7e22ce;
-            transform: scale(1.05);
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168,85,247,0.5);
         }
         
         .message {
@@ -171,13 +198,14 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
-            padding: 1.5rem 3rem;
-            border-radius: 1rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            background: #12171b;
+            border: 2px solid #a855f7;
+            padding: 20px 40px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(168,85,247,0.5);
             font-size: 2rem;
-            font-weight: bold;
-            color: #9333ea;
+            font-weight: 900;
+            color: #a855f7;
             z-index: 999;
             animation: bounce 0.5s ease;
         }
@@ -187,55 +215,91 @@
             50% { transform: translate(-50%, -50%) scale(1.15); }
         }
         
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         
-        @media (max-width: 768px) {
+        .stats-detail {
+            background: rgba(168,85,247,0.1);
+            border: 1px solid rgba(168,85,247,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .stats-detail p {
+            font-size: 18px;
+            color: #cbd5e1;
+            margin: 8px 0;
+        }
+        
+        .stats-detail .highlight {
+            color: #a855f7;
+            font-weight: 700;
+            font-size: 22px;
+        }
+        
+        @media (max-width: 720px) {
             #game-board {
-                gap: 0.5rem;
-                max-width: 90vw;
+                gap: 10px;
+                padding: 0 10px;
             }
             .card-face {
                 font-size: 2.5rem;
+            }
+            .game-header {
+                padding: 12px 15px;
+            }
+            .game-header h1 {
+                font-size: 18px;
+            }
+            .header-stats {
+                gap: 20px;
+            }
+            .stat-item label {
+                font-size: 11px;
+            }
+            .stat-item .score-display {
+                font-size: 18px;
             }
         }
     </style>
 </head>
 <body>
-    <div id="header">
-        <div class="header-content">
-            <div class="title">🐾 Animal Match</div>
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-label">Score</div>
-                    <div class="stat-value score" id="score">0</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label">Moves</div>
-                    <div class="stat-value moves" id="moves">0</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label">Time</div>
-                    <div class="stat-value time" id="time">90s</div>
-                </div>
+    <div class="game-header">
+        <h1>🐾 Animal Match</h1>
+        <div class="header-stats">
+            <div class="stat-item">
+                <label>Score:</label>
+                <span class="score-display" id="scoreDisplay">0</span>
+            </div>
+            <div class="stat-item">
+                <label>Moves:</label>
+                <span class="score-display" id="movesDisplay">0</span>
+            </div>
+            <div class="stat-item">
+                <label>Time:</label>
+                <span class="score-display time-display" id="timeDisplay">90s</span>
             </div>
         </div>
     </div>
 
-    <div id="game-container">
-        <div id="game-board"></div>
-    </div>
-
-    <div id="startOverlay" class="overlay">
-        <h2>🐾 Animal Match Game</h2>
-        <p>Find all 8 matching pairs!</p>
-        <button onclick="startGame()">▶️ Start Game</button>
+    <div class="wrap">
+        <div id="game-container">
+            <div id="game-board"></div>
+        </div>
     </div>
 
     <div id="gameOverOverlay" class="overlay hidden">
-        <h2>🎮 Game Over!</h2>
-        <p id="finalStats"></p>
-        <p>Play again?</p>
-        <button onclick="startGame()">🔄 Play Again</button>
+        <div class="card-dialog">
+            <h1>🎮 Game Over!</h1>
+            <div class="stats-detail">
+                <p>Final Score: <span class="highlight" id="finalScore">0</span></p>
+                <p>Total Moves: <span class="highlight" id="finalMoves">0</span></p>
+                <p id="winMessage" class="hidden" style="color: #4ade80; font-weight: 700; margin-top: 10px;">🏆 You Won!</p>
+            </div>
+            <p class="muted">Ready for another round?</p>
+            <button onclick="startGame()" class="btn-primary">🔄 Play Again</button>
+        </div>
     </div>
 
     <div id="message" class="message hidden"></div>
@@ -273,7 +337,7 @@
             
             const cardFront = document.createElement('div');
             cardFront.className = 'card-face card-front';
-            cardFront.style.background = animal.color;
+            cardFront.style.borderColor = animal.color;
             cardFront.textContent = animal.emoji;
             
             card.appendChild(cardBack);
@@ -350,21 +414,31 @@
         }
 
         function updateUI() {
-            document.getElementById('score').textContent = score;
-            document.getElementById('moves').textContent = moves;
-            const timeEl = document.getElementById('time');
+            document.getElementById('scoreDisplay').textContent = score;
+            document.getElementById('movesDisplay').textContent = moves;
+            const timeEl = document.getElementById('timeDisplay');
             timeEl.textContent = timeLeft + 's';
-            timeEl.className = 'stat-value time' + (timeLeft < 15 ? ' warning' : '');
+            timeEl.className = 'score-display time-display' + (timeLeft < 15 ? ' warning' : '');
         }
 
         function endGame(won) {
             gameOver = true;
+            gameStarted = false;
             clearInterval(timerInterval);
-            document.getElementById('finalStats').innerHTML = 
-                `Final Score: ${score}<br>Moves: ${moves}`;
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalMoves').textContent = moves;
+            
+            if (won) {
+                document.getElementById('winMessage').classList.remove('hidden');
+            } else {
+                document.getElementById('winMessage').classList.add('hidden');
+            }
+            
             document.getElementById('gameOverOverlay').classList.remove('hidden');
+            
             if (!won) {
-                showMessage('Time Up! 😅');
+                showMessage('Time Up! ⏰');
             }
         }
 
@@ -376,7 +450,6 @@
             timeLeft = 90;
             updateUI();
             
-            document.getElementById('startOverlay').classList.add('hidden');
             document.getElementById('gameOverOverlay').classList.add('hidden');
             
             setupGame();
@@ -391,6 +464,9 @@
                 }
             }, 1000);
         }
+
+        // Auto-start the game when page loads
+        window.addEventListener('load', startGame);
     </script>
 </body>
 </html>
