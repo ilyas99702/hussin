@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Animal Match Game</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -115,9 +114,20 @@
             50% { transform: translate(-50%, -50%) scale(1.1); }
         }
         .hidden { display: none; }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.5rem;
+            z-index: 2000;
+        }
     </style>
 </head>
 <body>
+    <div id="loading">Loading game...</div>
+    
     <div id="header">
         <div class="header-content">
             <div class="title">🐾 Animal Match</div>
@@ -155,14 +165,31 @@
 
     <div id="message" class="message hidden"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+        // Wait for Three.js to load
+        function waitForThree() {
+            return new Promise((resolve) => {
+                if (typeof THREE !== 'undefined') {
+                    resolve();
+                } else {
+                    setTimeout(() => waitForThree().then(resolve), 100);
+                }
+            });
+        }
+
+        waitForThree().then(() => {
+            document.getElementById('loading').style.display = 'none';
+            initGame();
+        });
+
         let scene, camera, renderer;
         let cards = [];
         let flippedCards = [];
         let matchedPairs = 0;
         let canFlip = true;
-        let raycaster = new THREE.Raycaster();
-        let mouse = new THREE.Vector2();
+        let raycaster;
+        let mouse;
         let score = 0;
         let moves = 0;
         let timeLeft = 90;
@@ -181,7 +208,10 @@
             { emoji: '🐼', color: 0xc7ceea }
         ];
 
-        function init() {
+        function initGame() {
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            
             const container = document.getElementById('gameCanvas');
             
             scene = new THREE.Scene();
@@ -505,8 +535,6 @@
                 }
             }, 1000);
         }
-
-        init();
     </script>
 </body>
 </html>
