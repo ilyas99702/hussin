@@ -6,7 +6,7 @@
   },
   "miniapp": {
     "version": "1",
-    "name": "Farcaster Game",
+    "name": "Pictures puzzle",
     "iconUrl": "https://s3.envato.com/files/284097391/screen/02_GAME.png",
     "homeUrl": "https://hussin-theta.vercel.app/",
     "imageUrl": "https://raw.githubusercontent.com/enchanted-assets/public/main/images/tetris-cover.png",
