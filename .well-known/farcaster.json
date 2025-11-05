@@ -4,6 +4,11 @@
     "payload": "eyJkb21haW4iOiJodXNzaW4tdGhldGEudmVyY2VsLmFwcCJ9",
     "signature": "oYQrGNq+o4OgWwwTg9l0VhxuTPrI+Jf9Cs1JwbhdsYxc95UlRkELaLka7cQy45xBw24Ax8doe9JQXOOi1tBqWBs="
   },
+   "baseBuilder": {
+    "allowedAddresses": [
+      "0x342F20e8ae3b0A3477D27914B11CdB133E211391"
+    ]
+  },
   "miniapp": {
     "version": "1",
     "name": "Pictures puzzle",
